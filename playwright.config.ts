@@ -50,6 +50,16 @@ export default defineConfig({
         env: {
           ...process.env,
           NEXT_PUBLIC_DISABLE_USAGE_TRACKING: "true",
+          // Unauthenticated specs run without real Supabase credentials:
+          // valid-looking placeholders let the app boot and treat every
+          // request as logged out (auth.getUser() short-circuits before any
+          // network call). The URL points at the dev server itself so
+          // /api/health's reachability ping reports degraded, not down.
+          NEXT_PUBLIC_SUPABASE_URL:
+            process.env.NEXT_PUBLIC_SUPABASE_URL || "http://localhost:3000",
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+            process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+            "sb_publishable_placeholder",
         },
       },
 });
