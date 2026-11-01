@@ -1049,10 +1049,12 @@ pnpm build-storybook
 python3 -m http.server 6099 -d storybook-static &
 STORYBOOK_URL=http://localhost:6099 pnpm test:visual
 
-# Regenerate baselines after intentional visual changes
-STORYBOOK_URL=http://localhost:6099 pnpm test:visual --update-snapshots
+# Regenerate baselines after intentional visual changes (single command —
+# builds Storybook, serves it, runs --update-snapshots, cleans up)
+pnpm test:visual:update            # Linux / devcontainer
+pnpm test:visual:update -- --docker  # macOS/Windows: runs in Playwright image
 
-# Clean up
+# Clean up (manual serve only — the update script cleans up itself)
 kill $(lsof -ti:6099) 2>/dev/null; rm -rf storybook-static
 ```
 

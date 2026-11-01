@@ -109,6 +109,7 @@ Storybook stories are not just for regression detection — they are the referen
 ### Running tests
 
 - Run before pushing: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e`
+- Regenerate visual baselines after an intentional rendering change: `pnpm test:visual:update` — builds Storybook, serves `storybook-static`, and rewrites `e2e/visual-regression.spec.ts-snapshots/` via the `visual-regression` project. Baselines are `-linux.png`, so this must run on Linux: use the devcontainer, or `pnpm test:visual:update -- --docker` to run inside the Playwright container on macOS/Windows.
 
 ## Backlog
 
