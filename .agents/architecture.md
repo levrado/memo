@@ -660,6 +660,7 @@ src/
 
 scripts/
 ├── check-bundle.mjs           # Bundle budget check (per-route + framework baseline)
+├── update-visual-snapshots.sh # Regenerate visual baselines natively or via --docker (pnpm test:visual:update)
 ├── tweet.ts                   # Post a tweet to @swfactory_dev via Twitter API v2
 └── metrics/
     └── build-timeseries.mjs   # Build metrics timeseries from daily snapshots (with tests)
