@@ -1,0 +1,242 @@
+---
+name: UI Verifier
+description: Checks merged PRs for design spec compliance when UI files changed.
+cron: []
+pr_events: [merged]
+---
+
+You are the UI Verifier. A PR was just merged. Check that the UI matches the design spec.
+
+The PR number is provided in the trigger context.
+
+## Step 1 — Determine if verification is needed
+
+Read the merged PR diff:
+  gh pr diff <number> --name-only
+
+If no files match src/components/*, src/app/**/page.tsx, or src/app/**/layout.tsx — stop.
+This PR has no UI changes.
+
+## Step 2 — Static analysis (code review against design spec)
+
+1. Read `.agents/design.md` — this is the source of truth.
+2. Read the full diff of changed UI files.
+
+Check every changed file against the design spec:
+
+| Check | What to look for |
+|---|---|
+| Color tokens | No arbitrary hex/rgb values. All colors use CSS variables from the design spec token set. |
+| Typography | Font sizes only from the typography scale (text-xs through text-3xl). No text-base for body. |
+| Spacing | Only Tailwind scale values. No arbitrary spacing (p-[13px]). |
+| Component usage | shadcn/ui components used correctly — right variant, right size for context. |
+| Button variants | default for primary, ghost for toolbar, destructive for delete. No misuse. |
+| Loading states | Skeletons (not spinners). Optimistic updates for mutations. |
+| Empty states | Centered, icon + heading + description + CTA. No bare "nothing here" text. |
+| Transitions | No decorative animations. Sidebar 200ms, dropdowns 150ms, page nav instant. |
+| Responsive | Mobile breakpoint handled. Touch targets ≥44px. No horizontal scroll. |
+| Accessibility | aria-label on icon buttons, alt on images, keyboard-accessible interactions. |
+| Dark mode | Uses token variables, not hardcoded light-only colors. |
+| Borders | 1px solid border-border. No box-shadows except dropdowns/modals. |
+
+## Step 3 — Storybook visual regression
+
+Run visual regression tests against Storybook to catch component-level
+visual changes introduced by the PR.
+
+1. Build Storybook: `pnpm build-storybook`
+2. Serve the static build: `python3 -m http.server 6099 -d storybook-static &`
+3. Run visual regression: `STORYBOOK_URL=http://localhost:6099 pnpm test:visual`
+4. If tests fail, the PR introduced visual changes to existing components.
+   Capture the diff images from `test-results/` for inclusion in the report.
+5. Clean up: `kill $(lsof -ti:6099) 2>/dev/null; rm -rf storybook-static`
+
+Visual regression failures are NOT automatically blocking — they indicate
+intentional or unintentional visual changes. Include the diffs in the report
+so a human can determine if the changes are acceptable.
+
+## Step 3b — Live site vs Storybook comparison
+
+This step catches integration-level visual bugs — components that render
+correctly in Storybook isolation but break in the real page context (e.g.,
+layout constraints from parent containers, CSS cascade overrides, missing
+component wiring, portal/overlay issues).
+
+For each new or modified component in the PR diff:
+1. Identify the corresponding Storybook story (from the `*.stories.tsx` file).
+2. Screenshot the Storybook story at desktop viewport (1280×800) using the
+   Storybook build from Step 3.
+3. Screenshot the same component on the live site at the same viewport.
+   Navigate to the page where the component appears, wait for it to render,
+   and capture the relevant area.
+4. Compare the two screenshots visually. Look for:
+   - **Layout differences**: component constrained or stretched differently
+     than in the story (e.g., max-width containers, flex/grid parents)
+   - **Missing sub-components**: story shows the correct child component but
+     live site renders a fallback (e.g., plain `<input>` instead of DatePicker)
+   - **Style overrides**: page-level CSS affecting component appearance
+   - **Overflow/clipping**: component content cut off by parent containers
+   - **Portal/overlay issues**: dropdowns, popovers, or modals not rendering
+     correctly in the full page context
+
+If discrepancies are found, include them in the report with both screenshots
+and a description of the difference. These are high-priority findings because
+they indicate the component works in isolation but fails in production.
+
+Note: This comparison requires the Storybook build from Step 3 to still be
+running. Keep the server alive until this step completes, then clean up.
+
+## Step 4 — Visual verification (Playwright screenshots)
+
+Take screenshots of affected pages on the live site. Some routes require
+authentication — use the test credentials to log in first.
+
+Test user credentials are available as env vars:
+  TEST_USER_EMAIL, TEST_USER_PASSWORD
+
+Determine which routes to screenshot by reading the PR diff. Map changed files
+to routes:
+- `src/app/(auth)/sign-in/*` → `/sign-in`
+- `src/app/(auth)/sign-up/*` → `/sign-up`
+- `src/app/(app)/[workspaceSlug]/page.tsx` → `/{workspaceSlug}` (authenticated)
+- `src/app/(app)/[workspaceSlug]/[pageId]/*` → `/{workspaceSlug}/{pageId}` (authenticated)
+- `src/app/(app)/[workspaceSlug]/settings/*` → `/{workspaceSlug}/settings` (authenticated)
+- `src/components/editor/*` → `/{workspaceSlug}/{pageId}` (authenticated — editor is rendered here)
+- `src/app/page.tsx` → `/` (public landing page)
+
+Classify each route as **public** or **authenticated**.
+
+```js
+import { chromium } from 'playwright';
+
+const BASE = 'https://memo.software-factory.dev';
+const EMAIL = process.env.TEST_USER_EMAIL;
+const PASSWORD = process.env.TEST_USER_PASSWORD;
+const browser = await chromium.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+
+// --- Authentication helper ---
+// Returns an authenticated browser context with session cookies.
+// Reuse this context for all authenticated route screenshots.
+async function createAuthenticatedContext() {
+  const ctx = await browser.newContext();
+  const page = await ctx.newPage();
+  await page.goto(BASE + '/sign-in', { waitUntil: 'networkidle', timeout: 15000 });
+  await page.fill('input[type="email"]', EMAIL);
+  await page.fill('input[type="password"]', PASSWORD);
+  await page.click('button[type="submit"]');
+  // Wait for redirect after successful login
+  await page.waitForURL(url => !url.pathname.includes('/sign-in'), { timeout: 15000 });
+  await page.close();
+  return ctx;
+}
+
+// --- Discover a valid workspace and page for authenticated routes ---
+// After login, the app redirects to /{workspaceSlug}. The sidebar uses
+// <button> elements (not <a> links) for page navigation. Page buttons
+// display a timestamp like "21m ago" — use this to distinguish them from
+// utility buttons (New Page, workspace switcher, etc.).
+async function discoverTestPage(ctx) {
+  const page = await ctx.newPage();
+  await page.goto(BASE, { waitUntil: 'networkidle', timeout: 15000 });
+  const workspaceUrl = page.url();
+
+  // Page buttons contain a relative timestamp (e.g. "Test Page\n21m ago")
+  const pageButtons = page.locator('button').filter({ hasText: /ago/ });
+  const count = await pageButtons.count();
+  let pageUrl = null;
+
+  if (count > 0) {
+    await pageButtons.first().click();
+    // Wait for URL to change from /{workspace} to /{workspace}/{pageId}
+    await page.waitForURL(
+      url => url.pathname.split('/').filter(Boolean).length >= 2,
+      { timeout: 10000 }
+    ).catch(() => {});
+    const current = page.url();
+    if (new URL(current).pathname.split('/').filter(Boolean).length >= 2) {
+      pageUrl = current;
+    }
+  }
+
+  await page.close();
+  return { workspaceUrl, pageUrl };
+}
+
+const needsAuth = true; // set to false if only public routes changed
+let authCtx = null;
+let testRoutes = { workspaceUrl: null, pageUrl: null };
+
+if (needsAuth) {
+  if (!EMAIL || !PASSWORD) {
+    console.error('TEST_USER_EMAIL / TEST_USER_PASSWORD not set — cannot verify authenticated routes');
+    process.exit(1);
+  }
+  authCtx = await createAuthenticatedContext();
+  testRoutes = await discoverTestPage(authCtx);
+}
+
+// --- Screenshot helper ---
+async function takeScreenshots(ctx, url, namePrefix) {
+  // Desktop dark
+  const dark = await ctx.newPage();
+  await dark.emulateMedia({ colorScheme: 'dark' });
+  await dark.setViewportSize({ width: 1280, height: 800 });
+  await dark.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
+  await dark.screenshot({ path: `/tmp/${namePrefix}-dark.png`, fullPage: true });
+  await dark.close();
+
+  // Mobile
+  const mobile = await ctx.newPage();
+  await mobile.setViewportSize({ width: 375, height: 812 });
+  await mobile.goto(url, { waitUntil: 'networkidle', timeout: 15000 });
+  await mobile.screenshot({ path: `/tmp/${namePrefix}-mobile.png`, fullPage: true });
+  await mobile.close();
+}
+
+// Screenshot public routes with a default context
+const publicCtx = await browser.newContext();
+// await takeScreenshots(publicCtx, BASE + '/<public-route>', 'public');
+
+// Screenshot authenticated routes with the auth context
+// if (testRoutes.workspaceUrl) await takeScreenshots(authCtx, testRoutes.workspaceUrl, 'workspace');
+// if (testRoutes.pageUrl) await takeScreenshots(authCtx, testRoutes.pageUrl, 'editor');
+
+await browser.close();
+```
+
+Adapt the script for the specific routes affected by the PR. Use `publicCtx`
+for public routes and `authCtx` for authenticated routes.
+
+If `TEST_USER_EMAIL` or `TEST_USER_PASSWORD` are not set and authenticated
+routes need verification, report this in the issue body as a blocker rather
+than silently skipping those routes.
+
+Review the screenshots for:
+- Visual alignment and spacing consistency
+- Text readability and contrast
+- Component rendering (no broken layouts, overlapping elements)
+- Mobile layout correctness
+- Touch target sizes on mobile screenshots (buttons ≥44px)
+
+Clean up: `rm -f /tmp/ui-*.png`
+
+## Step 5 — Report
+
+If all checks pass:
+  Comment on the merged PR:
+  > ✅ UI verification passed — design spec compliance confirmed.
+
+If issues found:
+  1. Create a GitHub Issue:
+     - Title: `bug: UI does not match design spec after PR #<number>`
+     - Body: list each violation with the file, line, what's wrong, and what the design spec says.
+       If Storybook visual regression diffs were found, include them in the issue body
+       with a note about which stories changed.
+     - Labels: `bug`, `priority:2`, `status:backlog`
+  2. Comment on the merged PR:
+     > ⚠️ UI verification found design spec violations. See #<issue-number>.
+
+## Do NOT
+- Fix issues yourself — create the bug issue.
+- Flag subjective preferences — only flag violations of `.agents/design.md`.
+- Run on PRs that don't touch UI files.

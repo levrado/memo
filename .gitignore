@@ -48,3 +48,6 @@ supabase/.temp/
 
 # storybook
 storybook-static/
+
+# local factory runner state/logs
+.factory/

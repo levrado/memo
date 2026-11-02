@@ -22,7 +22,9 @@ src/lib/supabase/  → Supabase clients (client.ts, server.ts, proxy.ts)
 supabase/migrations/ → Database migrations
 .storybook/        → Storybook config (main.ts, preview.ts, preview-head.html)
 .agents/           → Agent knowledge base (architecture, conventions, design)
-.ona/              → Automation definitions and skills
+.ona/              → Agent skills (workflow docs, automation manager)
+.agents/automations/ → Factory automation prompts + triggers (run in local Docker sandboxes)
+scripts/factory/   → Local runner (`factory.mjs`) that schedules automations in `sbx` sandboxes
 docs/              → Product spec, decisions
 metrics/           → Daily/weekly metrics snapshots
 ```
@@ -140,7 +142,7 @@ Label lifecycle: `status:backlog` → `status:in-progress` → `status:in-review
 ### Automation development loop
 
 These automations work together to implement features and fix bugs autonomously.
-All automations run as the `sw-factory-automations` service account.
+Automations run locally in Docker sandboxes (`sbx`) via `node scripts/factory/factory.mjs daemon`; prompts live in `.agents/automations/`.
 
 | Automation | Trigger | Role |
 |---|---|---|

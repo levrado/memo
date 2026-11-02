@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memo Factory</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #fff; --text: #1c1c1a; --muted: #6b6b66; --line: #e3e3de;
+    --ok: #1a7f37; --bad: #cf222e; --run: #9a6700; --accent: #0969da;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151514; --panel: #1e1e1c; --text: #ececE8; --muted: #9a9a93; --line: #2f2f2b;
+      --ok: #3fb950; --bad: #f85149; --run: #d29922; --accent: #58a6ff;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; }
+  header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; margin-bottom: 16px; }
+  h1 { font-size: 20px; margin: 0; }
+  .meta { color: var(--muted); font-size: 12px; }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
+  @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  td, th { text-align: left; padding: 5px 6px; border-top: 1px solid var(--line); vertical-align: top; }
+  th { font-weight: 500; color: var(--muted); border-top: 0; font-size: 12px; }
+  .pill { display: inline-block; padding: 0 7px; border-radius: 10px; font-size: 11px; border: 1px solid var(--line); margin-right: 4px; }
+  .ok { color: var(--ok); } .bad { color: var(--bad); } .run { color: var(--run); }
+  a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; }
+  button.link { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0; font: inherit; }
+  pre { margin: 8px 0 0; padding: 10px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+    max-height: 340px; overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: 12px; }
+  .empty { color: var(--muted); font-style: italic; }
+  .wide { grid-column: 1 / -1; }
+  .banner { background: var(--panel); border: 1px solid var(--bad); color: var(--bad); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Memo Factory</h1>
+    <span class="meta" id="meta">loading…</span>
+  </header>
+  <div id="banner" class="banner" hidden></div>
+  <div class="grid">
+    <section id="now"><h2>Now</h2><div id="now-body"></div></section>
+    <section id="prs"><h2>Open pull requests</h2><div id="prs-body"></div></section>
+    <section id="issues" class="wide"><h2>Open issues by status</h2><div id="issues-body"></div></section>
+    <section id="runs" class="wide"><h2>Recent runs</h2><div id="runs-body"></div><pre id="log" hidden></pre></section>
+    <section id="autos" class="wide"><h2>Automations</h2><div id="autos-body"></div></section>
+  </div>
+</main>
+<script>
+  function h(tag, attrs, ...kids) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs ?? {})) {
+      if (k === "class") el.className = v;
+      else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+      else if (v !== false && v != null) el.setAttribute(k, v);
+    }
+    for (const kid of kids.flat()) el.append(kid instanceof Node ? kid : document.createTextNode(String(kid ?? "")));
+    return el;
+  }
+  const empty = (t) => h("div", { class: "empty" }, t);
+  const ago = (iso) => {
+    const s = Math.max(0, (Date.now() - new Date(iso)) / 1000);
+    if (s < 90) return `${Math.round(s)}s ago`;
+    if (s < 5400) return `${Math.round(s / 60)}m ago`;
+    if (s < 129600) return `${Math.round(s / 3600)}h ago`;
+    return `${Math.round(s / 86400)}d ago`;
+  };
+  const until = (iso) => {
+    if (!iso) return "—";
+    const s = (new Date(iso) - Date.now()) / 1000;
+    if (s < 90) return "<1m";
+    if (s < 5400) return `in ${Math.round(s / 60)}m`;
+    if (s < 129600) return `in ${Math.round(s / 3600)}h`;
+    return `in ${Math.round(s / 86400)}d`;
+  };
+  const dur = (a, b) => {
+    const s = Math.round((new Date(b) - new Date(a)) / 1000);
+    return s < 90 ? `${s}s` : `${Math.round(s / 60)}m`;
+  };
+  const link = (item, text) => h("a", { href: item.url, target: "_blank", rel: "noreferrer" }, text);
+
+  async function runNow(slug) {
+    await fetch(`/api/run?slug=${encodeURIComponent(slug)}`, { method: "POST", headers: { "x-factory": "1" } });
+    tick();
+  }
+
+  async function showLog(name) {
+    const pre = document.getElementById("log");
+    pre.hidden = false;
+    pre.textContent = "loading…";
+    const r = await fetch(`/api/log?name=${encodeURIComponent(name)}`);
+    pre.textContent = r.ok ? await r.text() : "log not found";
+    pre.scrollTop = pre.scrollHeight;
+  }
+
+  function render(d) {
+    document.getElementById("meta").textContent =
+      `${d.repo} · sandbox ${d.sandbox} · updated ${new Date(d.now).toLocaleTimeString()}`;
+
+    const banner = document.getElementById("banner");
+    banner.hidden = !d.paused;
+    banner.replaceChildren(d.paused ? h("span", {}, `Factory paused: ${d.paused} `) : "",
+      d.paused ? h("button", { class: "link", onclick: async () => {
+        await fetch("/api/resume", { method: "POST", headers: { "x-factory": "1" } }); tick(); } }, "resume") : "");
+
+    const now = document.getElementById("now-body");
+    now.replaceChildren(
+      d.running.length
+        ? h("table", {}, d.running.map((r) => h("tr", {},
+            h("td", { class: "run" }, "● running"), h("td", {}, r.slug), h("td", {}, ago(r.startedAt)),
+            h("td", {}, h("button", { class: "link", onclick: () => showLog(r.log) }, "log")))))
+        : empty("Idle."),
+      d.queued.length ? h("div", { class: "meta" }, `Queued: ${d.queued.join(", ")}`) : "",
+    );
+
+    const prs = document.getElementById("prs-body");
+    if (d.prs.error) prs.replaceChildren(h("div", { class: "bad" }, d.prs.error));
+    else prs.replaceChildren(d.prs.length
+      ? h("table", {}, d.prs.map((p) => {
+          const checks = p.statusCheckRollup ?? [];
+          const failed = checks.some((c) => c.conclusion === "FAILURE");
+          const pending = checks.some((c) => c.status && c.status !== "COMPLETED");
+          const state = failed ? ["✗", "bad"] : pending ? ["…", "run"] : checks.length ? ["✓", "ok"] : ["", ""];
+          return h("tr", {}, h("td", {}, link(p, `#${p.number}`)), h("td", {}, p.title, p.isDraft ? " (draft)" : ""),
+            h("td", { class: state[1] }, state[0]), h("td", { class: "meta" }, ago(p.updatedAt)));
+        }))
+      : empty("None open."));
+
+    const issues = document.getElementById("issues-body");
+    if (d.issues.error) issues.replaceChildren(h("div", { class: "bad" }, d.issues.error));
+    else {
+      const order = ["needs-human", "status:backlog", "status:in-progress", "status:in-review", "(no status)"];
+      const groups = Object.fromEntries(order.map((k) => [k, []]));
+      for (const i of d.issues) {
+        const names = i.labels.map((l) => l.name);
+        const key = order.find((k) => names.includes(k)) ?? "(no status)";
+        groups[key].push(i);
+      }
+      issues.replaceChildren(h("div", { class: "grid" }, order.map((k) => h("div", {},
+        h("div", { class: "meta" }, `${k} (${groups[k].length})`),
+        groups[k].length
+          ? h("table", {}, groups[k].map((i) => h("tr", {},
+              h("td", {}, link(i, `#${i.number}`)), h("td", {}, i.title),
+              h("td", {}, i.labels.map((l) => l.name).filter((n) => n.startsWith("priority:") || n === "bug")
+                .map((n) => h("span", { class: "pill" }, n))))))
+          : empty("—")))));
+    }
+
+    const runs = document.getElementById("runs-body");
+    runs.replaceChildren(d.runs.length
+      ? h("table", {}, h("tr", {}, ["Automation", "Started", "Took", "Result", ""].map((t) => h("th", {}, t))),
+          d.runs.map((r) => h("tr", {},
+            h("td", {}, r.slug), h("td", {}, ago(r.startedAt)), h("td", {}, dur(r.startedAt, r.endedAt)),
+            h("td", { class: r.exitCode === 0 ? "ok" : "bad" }, r.exitCode === 0 ? "ok" : `exit ${r.exitCode}`),
+            h("td", {}, h("button", { class: "link", onclick: () => showLog(r.log) }, "log")))))
+      : empty("No runs recorded yet."));
+
+    const autos = document.getElementById("autos-body");
+    autos.replaceChildren(h("table", {}, h("tr", {}, ["Automation", "Cron", "PR events", "Next run", ""].map((t) => h("th", {}, t))),
+      d.automations.map((a) => h("tr", {},
+        h("td", {}, a.name), h("td", { class: "meta" }, a.crons.join("  ·  ") || "—"),
+        h("td", { class: "meta" }, a.prEvents.join(", ") || "—"), h("td", {}, until(a.next)),
+        h("td", {}, h("button", { class: "link", onclick: () => runNow(a.slug) }, "run now"))))));
+  }
+
+  async function tick() {
+    try { render(await (await fetch("/api/status")).json()); }
+    catch (e) { document.getElementById("meta").textContent = `dashboard offline: ${e.message}`; }
+  }
+  tick();
+  setInterval(tick, 5000);
+</script>
+</body>
+</html>

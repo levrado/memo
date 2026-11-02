@@ -1113,7 +1113,7 @@ to act on. Every issue entering the backlog must have:
 3. Needs-Human Requeue automation (every 30 min) detects the response and removes `needs-human`.
 4. Feature Planner re-triages on its next manual run.
 
-For the full automation roster and workflow details, see `.ona/skills/development-workflow/SKILL.md`.
+For the full automation roster and workflow details, see `.ona/skills/development-workflow/SKILL.md` (automation prompts: `.agents/automations/`).
 
 ## Imports
 
