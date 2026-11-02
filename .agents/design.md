@@ -196,6 +196,12 @@ Override shadcn defaults: set `--radius: 0` in the theme, then apply `rounded-sm
 - Main content: fills remaining width, scrolls independently.
 - No top navbar. The sidebar handles all navigation.
 - Mobile (<768px): sidebar is a Sheet (slides in from left), triggered by hamburger icon.
+- Offline banner: when the browser reports offline, a non-blocking status strip
+  (`OfflineBanner`) renders at the very top of the shell, spanning sidebar +
+  content. `h-8`, `bg-muted`, `border-b border-overlay-border`, centered
+  `WifiOff` icon (14px, `text-code-type` — the warning palette) + `text-xs
+  text-muted-foreground` message. `role="status"` + `aria-live="polite"`.
+  Mounts/unmounts on window `offline`/`online` events — no reload needed.
 
 ### Page Tree (Sidebar)
 
@@ -609,7 +615,7 @@ When a database row is opened as a full page, properties display above the Lexic
 
 `@media print` rules in `src/app/globals.css` produce clean printouts of page content.
 
-- **Hidden in print:** sidebar, mobile header, workspace switcher, search, user menu, floating toolbar, slash command menu, command palette, focus mode hint, page count status bar, skip-to-content link, database interactive controls (add row, add column, select-all checkbox).
+- **Hidden in print:** sidebar, mobile header, workspace switcher, search, user menu, floating toolbar, slash command menu, command palette, focus mode hint, page count status bar, offline banner, skip-to-content link, database interactive controls (add row, add column, select-all checkbox).
 - **Layout:** `overflow: visible` and `height: auto` on the app shell so content flows naturally. Main content expands to full width.
 - **Database tables:** visible grid lines via `border: 1px solid var(--border)` on cells and headers. Scroll containers set to `overflow: visible`.
 - **Colors:** `print-color-adjust: exact` on body so select/status badge backgrounds print correctly.
@@ -634,7 +640,7 @@ When a database row is opened as a full page, properties display above the Lexic
 - Database board/gallery/list: arrow-key navigation with `tabIndex` management. `aria-label` on each card/row describing the item.
 - Filter bar: `aria-label` on filter pills, keyboard-navigable dropdowns.
 - Database view tabs: WAI-ARIA Tabs pattern — `role="tablist"` on container, `role="tab"` with `aria-selected` on each tab, `role="tabpanel"` with `aria-labelledby` on content. Arrow Left/Right (wrapping), Home/End keyboard navigation with roving `tabIndex`.
-- Live regions: `RowCountAnnouncer` uses `aria-live="polite"` to announce filter/sort result count changes to screen readers. `PageSearch` uses a debounced `aria-live="polite"` region to announce search result counts (e.g., "3 results found", "No results found").
+- Live regions: `RowCountAnnouncer` uses `aria-live="polite"` to announce filter/sort result count changes to screen readers. `PageSearch` uses a debounced `aria-live="polite"` region to announce search result counts (e.g., "3 results found", "No results found"). `OfflineBanner` uses `role="status"` + `aria-live="polite"` so connectivity loss is announced when the banner appears.
 - Callout blocks: `role="note"` with `aria-label` describing the callout variant.
 
 ---

@@ -304,6 +304,11 @@
     display: none !important;
   }
 
+  /* Hide offline connectivity banner */
+  [data-testid="as-offline-banner"] {
+    display: none !important;
+  }
+
   /* Hide skip-to-content link */
   a[href="#main-content"] {
     display: none !important;

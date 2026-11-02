@@ -5,6 +5,7 @@ import { SidebarProvider } from "@/components/sidebar/sidebar-context";
 import { WorkspaceProvider } from "@/components/sidebar/workspace-context";
 import { FocusModeHint } from "@/components/sidebar/focus-mode-hint";
 import { MobileHeaderTitle } from "@/components/sidebar/mobile-header-title";
+import { OfflineBanner } from "@/components/sidebar/offline-banner";
 import type { ReactNode } from "react";
 
 const AppSidebar = dynamic(
@@ -48,24 +49,27 @@ function AppShellInner({
   children,
 }: AppShellProps) {
   return (
-    <div className="flex h-screen overflow-hidden" data-testid="as-shell">
+    <div className="flex h-screen flex-col overflow-hidden" data-testid="as-shell">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
       >
         Skip to content
       </a>
-      <AppSidebar
-        userId={userId}
-        displayName={displayName}
-        email={email}
-      />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-10 shrink-0 items-center gap-2 border-b border-overlay-border px-4 md:hidden">
-          <SidebarToggle />
-          <MobileHeaderTitle />
-        </header>
-        <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto focus:outline-none">{children}</main>
+      <OfflineBanner />
+      <div className="flex flex-1 overflow-hidden">
+        <AppSidebar
+          userId={userId}
+          displayName={displayName}
+          email={email}
+        />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <header className="flex h-10 shrink-0 items-center gap-2 border-b border-overlay-border px-4 md:hidden">
+            <SidebarToggle />
+            <MobileHeaderTitle />
+          </header>
+          <main id="main-content" tabIndex={-1} className="flex-1 overflow-y-auto focus:outline-none">{children}</main>
+        </div>
       </div>
       <FocusModeHint />
     </div>
