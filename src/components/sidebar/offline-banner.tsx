@@ -26,6 +26,9 @@ function isOfflineServerSnapshot() {
  * Dismisses automatically on the `online` event. This is an indicator only —
  * it does not queue saves or retry them.
  */
+const OFFLINE_MESSAGE =
+  "You are offline — changes may not be saved until you reconnect.";
+
 export function OfflineBanner() {
   const isOffline = useSyncExternalStore(
     subscribeToConnectivity,
@@ -44,9 +47,15 @@ export function OfflineBanner() {
       className="flex h-8 shrink-0 items-center justify-center gap-2 border-b border-overlay-border bg-muted px-4"
       data-testid="as-offline-banner"
     >
-      <WifiOff className="h-3.5 w-3.5 text-code-type" aria-hidden="true" />
-      <span className="text-xs text-muted-foreground">
-        You are offline — changes may not be saved until you reconnect.
+      <WifiOff
+        className="h-3.5 w-3.5 shrink-0 text-code-type"
+        aria-hidden="true"
+      />
+      <span
+        className="min-w-0 truncate text-xs text-muted-foreground"
+        title={OFFLINE_MESSAGE}
+      >
+        {OFFLINE_MESSAGE}
       </span>
     </div>
   );
