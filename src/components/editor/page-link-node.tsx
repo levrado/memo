@@ -4,6 +4,8 @@ import type { JSX } from "react";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
   NodeKey,
@@ -199,6 +201,20 @@ export class PageLinkNode extends DecoratorNode<JSX.Element> {
     return { element };
   }
 
+  static importDOM(): DOMConversionMap | null {
+    return {
+      span: (domNode: HTMLElement) => {
+        if (!domNode.hasAttribute("data-page-id")) {
+          return null;
+        }
+        return {
+          conversion: $convertPageLinkElement,
+          priority: 1,
+        };
+      },
+    };
+  }
+
   getPageId(): string {
     return this.__pageId;
   }
@@ -210,6 +226,17 @@ export class PageLinkNode extends DecoratorNode<JSX.Element> {
   decorate(): JSX.Element {
     return <PageLinkComponent pageId={this.__pageId} />;
   }
+}
+
+function $convertPageLinkElement(
+  domNode: HTMLElement
+): DOMConversionOutput | null {
+  const pageId = domNode.getAttribute("data-page-id");
+  if (!pageId) {
+    return null;
+  }
+  const node = $createPageLinkNode({ pageId });
+  return { node };
 }
 
 export function $createPageLinkNode(payload: PageLinkPayload): PageLinkNode {

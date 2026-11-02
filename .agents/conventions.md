@@ -1354,6 +1354,42 @@ DecoratorNodes render React components via `decorate()`. Used for rich blocks li
 images that need interactive UI. The component receives the editor instance and node
 key for updates.
 
+### HTML paste serialization (exportDOM / importDOM)
+
+Any custom node that overrides `exportDOM()` must also implement `static importDOM()`
+so pasting its exported HTML reconstructs the node type instead of degrading to
+plain elements (Lexical warns in dev mode when they are unpaired). Follow the
+Lexical playground pattern: `exportDOM` writes marker attributes that `importDOM`
+checks before claiming the element.
+
+```typescript
+exportDOM(): DOMExportOutput {
+  const element = document.createElement("div");
+  element.setAttribute("data-emoji", this.__emoji);
+  return { element };
+}
+
+static importDOM(): DOMConversionMap | null {
+  return {
+    div: (domNode: HTMLElement) => {
+      // Return null for foreign elements with the same tag —
+      // only claim our own exported shape.
+      if (!domNode.hasAttribute("data-emoji")) return null;
+      return { conversion: $convertMyElement, priority: 1 };
+    },
+  };
+}
+```
+
+Use priority ≥ 1 for generic tags (`div`, `span`) so custom converters beat core
+conversions (priority 0). For wrappers indistinguishable from a plain element
+(e.g. `CollapsibleContentNode`'s `<div>`), add a `data-lexical-*` marker attribute
+in `exportDOM`. Unique tags (`details`, `summary`, `img`) need no marker.
+
+For headless tests of the conversion, use `$generateNodesFromDOM` /
+`$generateHtmlFromNodes` from `@lexical/html` (devDependency — the same functions
+the clipboard paste path calls internally). See `src/components/editor/import-dom.test.ts`.
+
 ### Custom plugin + command pattern
 
 Each custom block type has a paired plugin file that:
@@ -1389,7 +1425,7 @@ A static analysis test (`lexical-dispatch-safety.test.ts`) enforces this pattern
 
 ### Lexical package versions
 
-All `@lexical/*` packages are pinned to the same version (currently 0.31.0).
+All `@lexical/*` packages are pinned to the same version (currently 0.44.0).
 Always update them together to avoid version mismatches.
 
 ### Markdown conversion

@@ -4,6 +4,8 @@ import type { JSX } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
   NodeKey,
@@ -560,6 +562,20 @@ export class DatabaseNode extends DecoratorNode<JSX.Element> {
     return { element };
   }
 
+  static importDOM(): DOMConversionMap | null {
+    return {
+      div: (domNode: HTMLElement) => {
+        if (!domNode.hasAttribute("data-database-id")) {
+          return null;
+        }
+        return {
+          conversion: $convertDatabaseElement,
+          priority: 1,
+        };
+      },
+    };
+  }
+
   getDatabaseId(): string {
     return this.__databaseId;
   }
@@ -585,6 +601,17 @@ export class DatabaseNode extends DecoratorNode<JSX.Element> {
       />
     );
   }
+}
+
+function $convertDatabaseElement(
+  domNode: HTMLElement
+): DOMConversionOutput | null {
+  const databaseId = domNode.getAttribute("data-database-id");
+  if (!databaseId) {
+    return null;
+  }
+  const node = $createDatabaseNode({ databaseId, viewId: null });
+  return { node };
 }
 
 export function $createDatabaseNode(

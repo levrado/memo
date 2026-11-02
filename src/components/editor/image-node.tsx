@@ -8,6 +8,8 @@ import {
   useState,
 } from "react";
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   DOMExportOutput,
   LexicalEditor,
   LexicalNode,
@@ -415,6 +417,15 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     return { element };
   }
 
+  static importDOM(): DOMConversionMap | null {
+    return {
+      img: () => ({
+        conversion: $convertImageElement,
+        priority: 0,
+      }),
+    };
+  }
+
   getSrc(): string {
     return this.__src;
   }
@@ -461,6 +472,27 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
       />
     );
   }
+}
+
+function $convertImageElement(
+  domNode: HTMLElement
+): DOMConversionOutput | null {
+  const src = domNode.getAttribute("src");
+  if (!src || src.startsWith("file:///")) {
+    return null;
+  }
+  const widthAttr = domNode.getAttribute("width");
+  const heightAttr = domNode.getAttribute("height");
+  const width = widthAttr === null ? undefined : Number(widthAttr);
+  const height = heightAttr === null ? undefined : Number(heightAttr);
+  const node = $createImageNode({
+    src,
+    altText: domNode.getAttribute("alt") ?? "",
+    width: width !== undefined && Number.isFinite(width) ? width : undefined,
+    height:
+      height !== undefined && Number.isFinite(height) ? height : undefined,
+  });
+  return { node };
 }
 
 export function $createImageNode(payload: ImagePayload): ImageNode {
