@@ -1044,6 +1044,11 @@ Key conventions:
 - Cover: default state, all variants/sizes, disabled/error states, composition examples.
 - For components that depend on Supabase or server context, create visual-only stories
   with mock data passed via args or decorators.
+- Never fetch external assets (images, avatars, fonts) in stories — renders must be
+  deterministic in offline/restricted-egress environments or the visual regression
+  suite flakes. Use inline `data:image/svg+xml,...` URIs for image fixtures (see
+  `gallery-view.stories.tsx`, `page-cover.stories.tsx`). Enforced by
+  `stories-deterministic-assets.test.ts`.
 
 #### Interaction tests
 

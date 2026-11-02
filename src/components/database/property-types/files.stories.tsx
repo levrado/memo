@@ -14,17 +14,21 @@ const mockProperty: DatabaseProperty = {
   updated_at: "2026-01-01T00:00:00Z",
 };
 
-// Use placeholder images for stories (no real uploads)
+// Inline SVG placeholders — external image URLs fail to load in
+// offline/restricted-egress environments and break visual regression.
+const svgThumb = (color: string): string =>
+  `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="${color}"/></svg>`)}`;
+
 const sampleImages = {
   files: [
-    { name: "photo.jpg", url: "https://picsum.photos/seed/a/200/200" },
-    { name: "banner.png", url: "https://picsum.photos/seed/b/200/200" },
+    { name: "photo.jpg", url: svgThumb("#4a6fa5") },
+    { name: "banner.png", url: svgThumb("#8a5a72") },
   ],
 };
 
 const sampleMixed = {
   files: [
-    { name: "photo.jpg", url: "https://picsum.photos/seed/c/200/200" },
+    { name: "photo.jpg", url: svgThumb("#4a7c59") },
     { name: "report.pdf", url: "https://example.com/report.pdf" },
     { name: "data.csv", url: "https://example.com/data.csv" },
   ],
@@ -32,9 +36,9 @@ const sampleMixed = {
 
 const sampleOverflow = {
   files: [
-    { name: "img1.jpg", url: "https://picsum.photos/seed/d/200/200" },
-    { name: "img2.png", url: "https://picsum.photos/seed/e/200/200" },
-    { name: "img3.gif", url: "https://picsum.photos/seed/f/200/200" },
+    { name: "img1.jpg", url: svgThumb("#4a6fa5") },
+    { name: "img2.png", url: svgThumb("#8a5a72") },
+    { name: "img3.gif", url: svgThumb("#b0793f") },
     { name: "doc.pdf", url: "https://example.com/doc.pdf" },
     { name: "notes.txt", url: "https://example.com/notes.txt" },
   ],

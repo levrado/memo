@@ -33,9 +33,9 @@ Tracks code quality per domain. Updated by automations as a side effect of featu
 
 | Category | Files | Tests |
 |---|---|---|
-| Unit/Integration (Vitest) | 162 | 2234 |
+| Unit/Integration (Vitest) | 163 | 2237 |
 | E2E (Playwright) | 107 | 515 |
-| **Total** | **269** | **2749** |
+| **Total** | **270** | **2752** |
 
 E2E figure is distinct test cases (513 functional specs deduplicated across chromium + firefox, plus 1 visual-regression and 1 live-visual-regression case); `npx playwright test --list` reports 1028 test runs across 4 projects (chromium, firefox, visual-regression, live-visual-regression).
 
@@ -52,7 +52,7 @@ E2E figure is distinct test cases (513 functional specs deduplicated across chro
 - **Members**: `invite-form.test.ts` (4 tests), `member-list.test.tsx` (14 tests), `pending-invite-list.test.tsx` (8 tests), `role-select.test.tsx` (8 tests), `e2e/members.spec.ts` (7 tests)
 - **Feedback**: `feedback/route.test.ts` (22 tests), `feedback-form-design-spec.test.ts` (5 tests), `use-screenshot.test.ts` (2 tests), `e2e/feedback.spec.ts` (6 tests)
 - **API**: `health/route.test.ts` (13 tests), `search/route.test.ts` (14 tests), `account/route.test.ts` (9 tests), `cron/purge-trash/route.test.ts` (10 tests), `feedback/route.test.ts` (22 tests), `pages/[pageId]/versions/route.test.ts` (17 tests), `pages/[pageId]/versions/route.rate-limit.test.ts` (3 tests), `pages/[pageId]/versions/[versionId]/route.test.ts` (14 tests), `pages/[pageId]/versions/[versionId]/route.rate-limit.test.ts` (3 tests), `e2e/account-deletion.spec.ts` (4 tests), `e2e/account-settings.spec.ts` (5 tests)
-- **UI**: `overlay-opacity.test.ts` (2 tests), `toast-error-duration.test.ts` (1 test), `dialog-design-spec.test.ts` (3 tests), `design-spec-compliance.test.ts` (14 tests), `relative-time.test.ts` (7 tests), `reduced-motion.test.ts` (6 tests), `e2e/visual-regression.spec.ts` (1 test), `e2e/live-visual-regression.spec.ts` (1 test)
+- **UI**: `overlay-opacity.test.ts` (2 tests), `toast-error-duration.test.ts` (1 test), `dialog-design-spec.test.ts` (3 tests), `design-spec-compliance.test.ts` (14 tests), `relative-time.test.ts` (7 tests), `reduced-motion.test.ts` (6 tests), `stories-deterministic-assets.test.ts` (3 tests), `e2e/visual-regression.spec.ts` (1 test), `e2e/live-visual-regression.spec.ts` (1 test)
 - **Lib**: `sentry.test.ts` (4 tests), `sentry.unit.test.ts` (193 tests), `classification-edge-cases.test.ts` (42 tests), `api-route-consistency.test.ts` (6 tests), `replay-filter.test.ts` (6 tests), `retry.test.ts` (16 tests), `rate-limit.test.ts` (17 tests), `track-event-server.test.ts` (9 tests), `track-event.test.ts` (4 tests), `trash-retention.test.ts` (7 tests), `usage-tracking-guard.test.ts` (5 tests), `use-roving-tabindex.test.ts` (13 tests)
 - **Infrastructure**: `migrations.test.ts` (33 tests), `build-timeseries.test.mjs` (6 tests), `supabase/client.test.ts` (7 tests), `supabase/proxy.test.ts` (2 tests), `security-headers.test.ts` (18 tests), `layout-hydration.test.ts` (2 tests)
 
@@ -236,3 +236,4 @@ E2E figure is distinct test cases (513 functional specs deduplicated across chro
 | 2026-11-01 | Add unit tests for property type icon and label mappings (#5). Added 1 new Vitest file: `property-icons.test.ts` (5 tests) — parses the `PropertyType` union from `types.ts` and asserts the icon/label maps stay in sync with no extra keys and no empty labels. Test totals: 157 Vitest files (2190 tests), 105 E2E specs (500 tests). |
 | 2026-11-01 | Show days remaining until auto-purge in trash (#7). Added 2 new Vitest files: `trash-retention.test.ts` (7 tests) and `trash-item-row.test.tsx` (9 tests). Extracted `TrashItemRow` presentational component; added per-item purge countdown, expiring-soon destructive styling, and retention footer note to the trash section. Extended `e2e/trash.spec.ts` "deleted page appears" test to assert the countdown and policy note (spec count unchanged: 9 tests). Updated visual regression baselines (6 new TrashItemRow stories, 2 updated TrashSection stories). Test totals: 159 Vitest files (2206 tests), 105 E2E specs (500 tests). |
 | 2026-11-02 | Add offline connectivity banner (#8). New `OfflineBanner` component in app shell (useSyncExternalStore on `navigator.onLine` + `online`/`offline` events). Added 1 new Vitest file: `offline-banner.test.tsx` (5 tests). Added 1 new E2E spec: `e2e/offline-banner.spec.ts` (1 test). Added 2 Storybook stories with visual regression baselines. Test totals: 162 Vitest files (2234 tests), 107 E2E specs (514 tests). |
+| 2026-11-02 | Deterministic Storybook image fixtures (#32). Replaced external image URLs (unsplash, picsum, pravatar) in 6 story files with inline `data:` SVG URIs so visual regression is deterministic in restricted-egress environments. Removed `EXTERNAL_IMAGE_STORY_PATTERNS` exemption from `e2e/visual-regression.spec.ts`. Added 1 new Vitest file: `stories-deterministic-assets.test.ts` (3 tests) — convention check forbidding external image URLs in stories. Regenerated 13 visual baselines. Test totals: 163 Vitest files (2237 tests), 107 E2E specs (515 tests). |
