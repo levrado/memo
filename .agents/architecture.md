@@ -393,7 +393,7 @@ src/
 │   ├── auth/
 │   │   └── callback/route.ts # Auth callback: email confirmation, OAuth, and password recovery redirect
 │   ├── (auth)/             # Unauthenticated route group
-│   │   ├── layout.tsx      # Centered card layout for auth pages
+│   │   ├── layout.tsx      # Centered card layout for auth pages, with back-to-home link
 │   │   ├── sign-in/
 │   │   │   ├── page.tsx        # /sign-in — server page
 │   │   │   ├── error.tsx       # Sign-in error boundary (delegates to RouteError)
