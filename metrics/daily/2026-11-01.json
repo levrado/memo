@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-01",
+  "day_number": 203,
+  "loc": { "total": 86410, "delta": 45, "by_language": { "TypeScript": 84515, "SQL": 1547, "CSS": 348 } },
+  "files": { "total": 276, "delta": 0 },
+  "prs": { "total": 938, "delta": 1, "currently_open": 2 },
+  "commits": { "total": 965, "delta": 5 },
+  "issues": {
+    "backlog": 1,
+    "in_progress": 0,
+    "in_review": 2,
+    "done": 519,
+    "opened_today": 8,
+    "closed_today": 1,
+    "delta_opened": 8,
+    "delta_done": 1
+  },
+  "tests": { "unit": 2190, "e2e": 1006 },
+  "ci": { "runs_total": 4, "runs_passed": 2, "pass_rate_pct": 50.0 },
+  "test_coverage_pct": 37.59,
+  "autonomous_pct": 91,
+  "pr_merge_time_buckets": { "lt_5m": 207, "5_10m": 180, "10_20m": 57, "30_60m": 34, "1_2h": 12 },
+  "issue_close_time_buckets": { "lt_15m": 50, "15_30m": 81, "30_60m": 101, "1_2h": 66, "2_4h": 50, "4_8h": 17 },
+  "human_minutes": null,
+  "agent_minutes": null
+}
