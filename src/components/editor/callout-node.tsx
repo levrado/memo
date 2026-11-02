@@ -1,6 +1,8 @@
 "use client";
 
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
   NodeKey,
@@ -116,6 +118,20 @@ export class CalloutNode extends ElementNode {
     return { element };
   }
 
+  static importDOM(): DOMConversionMap | null {
+    return {
+      div: (domNode: HTMLElement) => {
+        if (!domNode.classList.contains("callout")) {
+          return null;
+        }
+        return {
+          conversion: $convertCalloutElement,
+          priority: 1,
+        };
+      },
+    };
+  }
+
   getEmoji(): string {
     return this.getLatest().__emoji;
   }
@@ -164,6 +180,22 @@ export class CalloutNode extends ElementNode {
     this.insertAfter(paragraph, restoreSelection);
     return paragraph;
   }
+}
+
+function $convertCalloutElement(
+  domNode: HTMLElement
+): DOMConversionOutput | null {
+  const variantAttr = domNode.getAttribute("data-variant");
+  const variant: CalloutVariant =
+    variantAttr === "info" ||
+    variantAttr === "warning" ||
+    variantAttr === "success" ||
+    variantAttr === "error"
+      ? variantAttr
+      : "info";
+  const emoji = domNode.getAttribute("data-emoji") ?? undefined;
+  const node = $createCalloutNode(emoji, variant);
+  return { node };
 }
 
 export function $createCalloutNode(

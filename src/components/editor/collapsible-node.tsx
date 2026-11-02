@@ -1,6 +1,8 @@
 "use client";
 
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
   NodeKey,
@@ -81,6 +83,15 @@ export class CollapsibleContainerNode extends ElementNode {
     return { element };
   }
 
+  static importDOM(): DOMConversionMap | null {
+    return {
+      details: () => ({
+        conversion: $convertDetailsElement,
+        priority: 1,
+      }),
+    };
+  }
+
   getOpen(): boolean {
     return this.getLatest().__open;
   }
@@ -152,6 +163,15 @@ export class CollapsibleTitleNode extends ElementNode {
   exportDOM(): DOMExportOutput {
     const element = document.createElement("summary");
     return { element };
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return {
+      summary: () => ({
+        conversion: $convertSummaryElement,
+        priority: 1,
+      }),
+    };
   }
 
   isInline(): boolean {
@@ -249,12 +269,49 @@ export class CollapsibleContentNode extends ElementNode {
 
   exportDOM(): DOMExportOutput {
     const element = document.createElement("div");
+    // Marker attribute so importDOM can distinguish the content wrapper
+    // from a plain <div> when re-importing exported HTML.
+    element.setAttribute("data-lexical-collapsible-content", "true");
     return { element };
+  }
+
+  static importDOM(): DOMConversionMap | null {
+    return {
+      div: (domNode: HTMLElement) => {
+        if (!domNode.hasAttribute("data-lexical-collapsible-content")) {
+          return null;
+        }
+        return {
+          conversion: $convertCollapsibleContentElement,
+          priority: 2,
+        };
+      },
+    };
   }
 
   isInline(): boolean {
     return false;
   }
+}
+
+// --- DOM import (HTML paste) conversion ---
+
+function $convertDetailsElement(
+  domNode: HTMLElement
+): DOMConversionOutput | null {
+  // The `open` boolean attribute reflects the details element's open state.
+  const node = $createCollapsibleContainerNode(domNode.hasAttribute("open"));
+  return { node };
+}
+
+function $convertSummaryElement(): DOMConversionOutput | null {
+  const node = $createCollapsibleTitleNode();
+  return { node };
+}
+
+function $convertCollapsibleContentElement(): DOMConversionOutput | null {
+  const node = $createCollapsibleContentNode();
+  return { node };
 }
 
 // --- Factory functions ---

@@ -3,6 +3,8 @@
 import type { JSX } from "react";
 import { useCallback, useEffect, useState } from "react";
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   DOMExportOutput,
   LexicalNode,
   NodeKey,
@@ -198,6 +200,20 @@ export class TableOfContentsNode extends DecoratorNode<JSX.Element> {
     return { element };
   }
 
+  static importDOM(): DOMConversionMap | null {
+    return {
+      div: (domNode: HTMLElement) => {
+        if (domNode.getAttribute("data-type") !== "table-of-contents") {
+          return null;
+        }
+        return {
+          conversion: $convertTableOfContentsElement,
+          priority: 1,
+        };
+      },
+    };
+  }
+
   isInline(): false {
     return false;
   }
@@ -205,6 +221,13 @@ export class TableOfContentsNode extends DecoratorNode<JSX.Element> {
   decorate(): JSX.Element {
     return <TableOfContentsComponent />;
   }
+}
+
+// The TOC is auto-generated from headings, so a pasted TOC placeholder
+// simply becomes a fresh TOC node — it re-derives entries on render.
+function $convertTableOfContentsElement(): DOMConversionOutput | null {
+  const node = $createTableOfContentsNode();
+  return { node };
 }
 
 export function $createTableOfContentsNode(): TableOfContentsNode {

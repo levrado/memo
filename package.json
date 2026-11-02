@@ -53,6 +53,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
     "@lexical/headless": "0.44.0",
+    "@lexical/html": "0.44.0",
     "@playwright/test": "^1.59.1",
     "@storybook/addon-essentials": "^8.6.14",
     "@storybook/addon-interactions": "^8.6.14",
