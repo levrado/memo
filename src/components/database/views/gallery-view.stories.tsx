@@ -11,12 +11,19 @@ import type {
 // Mock data
 // ---------------------------------------------------------------------------
 
+// Inline SVG gradients keep covers deterministic — external image URLs fail
+// to load in offline/restricted-egress environments and break visual tests.
+function svgCover(from: string, to: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${from}"/><stop offset="1" stop-color="${to}"/></linearGradient></defs><rect width="400" height="300" fill="url(#g)"/></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
 const PLACEHOLDER_COVERS = [
-  "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400&h=300&fit=crop",
-  "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=300&fit=crop",
-  "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=400&h=300&fit=crop",
-  "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&h=300&fit=crop",
-  "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=300&fit=crop",
+  svgCover("#4a7c59", "#2d4f3a"),
+  svgCover("#4a6fa5", "#2c4566"),
+  svgCover("#b0793f", "#6e4a24"),
+  svgCover("#8a5a72", "#4f2f44"),
+  svgCover("#3d7a7a", "#235252"),
 ];
 
 const mockProperties: DatabaseProperty[] = [
