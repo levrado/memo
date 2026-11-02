@@ -105,3 +105,40 @@ test.describe("Authentication", () => {
     }
   });
 });
+
+test.describe("Back to home link", () => {
+  for (const path of [
+    "/sign-in",
+    "/sign-up",
+    "/forgot-password",
+    "/reset-password",
+  ]) {
+    test(`${path} shows a back-to-home link`, async ({ page }) => {
+      await page.goto(path);
+      const link = page.getByRole("link", { name: /back to home/i });
+      await expect(link).toBeVisible();
+      await expect(link).toHaveAttribute("href", "/");
+    });
+  }
+
+  test("back-to-home link navigates to the landing page", async ({ page }) => {
+    await page.goto("/sign-in");
+    await page.getByRole("link", { name: /back to home/i }).click();
+    await page.waitForURL("/", { timeout: 10_000 });
+    await expect(
+      page.getByRole("heading", { name: "Memo" }),
+    ).toBeVisible();
+  });
+
+  test("back-to-home link is keyboard accessible", async ({ page }) => {
+    await page.goto("/sign-in");
+    const link = page.getByRole("link", { name: /back to home/i });
+    await link.focus();
+    await expect(link).toBeFocused();
+    await page.keyboard.press("Enter");
+    await page.waitForURL("/", { timeout: 10_000 });
+    await expect(
+      page.getByRole("heading", { name: "Memo" }),
+    ).toBeVisible();
+  });
+});
