@@ -643,6 +643,30 @@ router.push(`/${workspaceSlug}/${newPage.id}`);
 navigation that follows a mutation or user action where the destination isn't
 known until the action completes.
 
+### Text in fixed-height strips must truncate, not wrap
+
+Text inside a fixed-height container (`h-8` status strips, `h-10` rows, table
+cells) must not be allowed to wrap — wrapped text overflows the fixed-height
+box at narrow viewports and renders outside the component's border. Use
+`min-w-0 truncate` on the text element (flex items default to `min-width: auto`,
+so `truncate` alone cannot shrink them) and `shrink-0` on adjacent icons. Put
+the full text in a `title` attribute so it stays readable on hover (same
+pattern as `page-breadcrumb.tsx`).
+
+```tsx
+// ❌ BAD — wraps to two lines and bleeds outside the h-8 strip at 375px
+<div className="flex h-8 items-center gap-2">
+  <WifiOff className="h-3.5 w-3.5" />
+  <span className="text-xs">{message}</span>
+</div>
+
+// ✅ GOOD — message ellipsizes inside the strip
+<div className="flex h-8 items-center gap-2">
+  <WifiOff className="h-3.5 w-3.5 shrink-0" />
+  <span className="min-w-0 truncate text-xs" title={message}>{message}</span>
+</div>
+```
+
 ## Theme (Light/Dark Mode)
 
 Theme is managed by `src/lib/theme.tsx` which provides `ThemeProvider` and `useTheme`.

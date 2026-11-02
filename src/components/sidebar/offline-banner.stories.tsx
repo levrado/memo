@@ -75,3 +75,17 @@ export const Offline: Story = {
     </MockShellColumn>
   ),
 };
+
+/** Offline at 375px — the message truncates inside the h-8 strip instead of
+ * wrapping onto the page background below it. */
+export const OfflineNarrow: Story = {
+  render: () => (
+    <div className="w-[375px]">
+      <MockShellColumn>
+        <OfflineScope>
+          <OfflineBanner />
+        </OfflineScope>
+      </MockShellColumn>
+    </div>
+  ),
+};
