@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, RotateCcw, Trash2, X } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { getClient } from "@/lib/supabase/lazy-client";
 import {
@@ -11,7 +11,15 @@ import {
   isSchemaNotFoundError,
 } from "@/lib/sentry";
 import { retryOnNetworkError } from "@/lib/retry";
+import {
+  TRASH_RETENTION_DAYS,
+  daysUntilPurge,
+} from "@/lib/trash-retention";
 import { useWorkspace } from "@/components/sidebar/workspace-context";
+import {
+  TrashItemRow,
+  type TrashedPage,
+} from "@/components/sidebar/trash-item-row";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -24,13 +32,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-
-interface TrashedPage {
-  id: string;
-  title: string;
-  icon: string | null;
-  deleted_at: string;
-}
 
 export function TrashSection() {
   const router = useRouter();
@@ -196,49 +197,19 @@ export function TrashSection() {
       {expanded && (
         <div className="flex flex-col gap-0.5">
           {trashedPages.map((page) => (
-            <div
+            <TrashItemRow
               key={page.id}
-              data-testid="trash-item"
-              className="group flex items-center gap-2 px-2 py-0.5 text-sm text-muted-foreground hover:bg-overlay-hover"
-            >
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center">
-                {page.icon ? (
-                  <span className="text-sm">{page.icon}</span>
-                ) : (
-                  <FileText className="h-4 w-4" />
-                )}
-              </span>
-
-              <span className="flex-1 truncate text-left opacity-60">
-                {page.title || "Untitled"}
-              </span>
-
-              <div className="flex shrink-0 items-center gap-0.5 opacity-0 group-hover:opacity-100">
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  className="h-5 w-5"
-                  onClick={() => handleRestore(page)}
-                  disabled={operating}
-                  aria-label="Restore page"
-                  data-testid="trash-restore-btn"
-                >
-                  <RotateCcw className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  className="h-5 w-5 text-destructive"
-                  onClick={() => setPermanentDeleteTarget(page)}
-                  disabled={operating}
-                  aria-label="Permanently delete page"
-                  data-testid="trash-delete-btn"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
+              page={page}
+              daysLeft={daysUntilPurge(page.deleted_at)}
+              operating={operating}
+              onRestore={handleRestore}
+              onPermanentDelete={setPermanentDeleteTarget}
+            />
           ))}
+
+          <p className="px-2 pt-1 text-xs text-muted-foreground">
+            Pages are permanently deleted after {TRASH_RETENTION_DAYS} days
+          </p>
 
           <Button
             variant="ghost"

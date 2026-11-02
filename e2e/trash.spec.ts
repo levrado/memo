@@ -154,6 +154,16 @@ test.describe("Trash and soft-delete operations", () => {
     // The trash section should contain at least one item (the deleted page)
     const trashItem = sidebar.getByTestId("trash-item").first();
     await expect(trashItem).toBeVisible({ timeout: 5_000 });
+
+    // The item shows a purge countdown (a just-deleted page has 30d left)
+    await expect(
+      trashItem.getByTestId("trash-purge-countdown"),
+    ).toHaveText(/\d+d left|Deletes today/);
+
+    // The section states the retention policy once
+    await expect(
+      sidebar.getByText(/permanently deleted after \d+ days/i),
+    ).toBeVisible();
   });
 
   test("user can restore a page from trash", async ({

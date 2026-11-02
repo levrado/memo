@@ -207,6 +207,23 @@ Override shadcn defaults: set `--radius: 0` in the theme, then apply `rounded-sm
 - Drag handle: visible on hover, left edge.
 - "New Page" button: bottom of tree, full width, `text-muted-foreground`.
 
+### Trash Section (Sidebar)
+
+- Each trashed page row shows a right-aligned purge countdown after the title:
+  `text-xs tabular-nums`, `text-muted-foreground`, in `Nd left` format
+  ("12d left"). `0` days remaining renders as "Deletes today".
+- The countdown carries a `title` tooltip with the full phrasing
+  ("Permanently deleted in N days").
+- Items with ≤3 days remaining are visually distinguished: countdown uses
+  `text-destructive`.
+- On row hover or keyboard focus, the countdown swaps out for the restore/delete
+  actions: countdown gets `group-hover:hidden group-focus-within:hidden`, actions
+  are `absolute right-2` revealed via `group-hover:opacity-100
+  group-focus-within:opacity-100`. This keeps titles readable at rest.
+- The retention policy is stated once per expanded section as a footer note above
+  the "Empty trash" button: `text-xs text-muted-foreground`,
+  "Pages are permanently deleted after 30 days".
+
 ### Page Icon (Editor)
 
 Above the page title in the editor view. Shows the page's emoji icon or a hover-triggered

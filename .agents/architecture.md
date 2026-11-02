@@ -461,6 +461,7 @@ src/
 │   │   ├── page-tree-drag-layer.ts # usePageTreeDrag hook: drag-and-drop state + handlers
 │   │   ├── use-page-tree-actions.ts # usePageTreeActions hook: CRUD operations (create, delete, duplicate, rename, move, nest, favorites)
 │   │   ├── trash-section.tsx    # Trash bin: lists soft-deleted pages, restore, permanent delete, empty trash
+│   │   ├── trash-item-row.tsx   # Single trashed page row: title, purge countdown, hover restore/delete actions
 │   │   └── user-menu.tsx        # User dropdown with settings link + sign-out
 │   ├── editor/                  # Lexical block editor
 │   │   ├── editor.tsx               # Main editor: LexicalComposer, plugins, auto-save to Supabase
@@ -637,6 +638,7 @@ src/
 │   ├── toast.ts            # Lazy-loaded sonner toast wrapper to reduce initial bundle size
 │   ├── track-event.ts      # Client-side usage event tracking (trackEventClient)
 │   ├── track-event-server.ts # Server-side usage event tracking (trackEvent)
+│   ├── trash-retention.ts  # Trash purge constants + daysUntilPurge (30-day retention, expiring-soon threshold)
 │   ├── types.ts            # Database entity types
 │   ├── usage-tracking-guard.ts # isUsageTrackingDisabled — suppresses usage events in CI/test
 │   ├── use-markdown-import.ts # Hook for importing .md files as new pages (shared by page-menu and workspace-home)
